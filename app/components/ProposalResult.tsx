@@ -1,6 +1,6 @@
 "use client";
 
-import type { ProductRecommendation, Incentive } from "@/lib/types";
+import type { ProductRecommendation, Incentive, IncomeEstimate } from "@/lib/types";
 
 const CATEGORY_LABELS: Record<string, string> = {
   solar_ppa: "Solar PPA",
@@ -32,10 +32,17 @@ const SCOPE_BADGE: Record<string, string> = {
   utility: "bg-green-100 text-green-700",
 };
 
+const CONFIDENCE_COLORS: Record<string, string> = {
+  high: "text-green-700 bg-green-50",
+  medium: "text-yellow-700 bg-yellow-50",
+  low: "text-gray-600 bg-gray-100",
+};
+
 interface Props {
   proposal: string;
   products: ProductRecommendation[];
   incentives: Incentive[];
+  incomeEstimate: IncomeEstimate | null;
   customerName: string;
   onReset: () => void;
 }
@@ -58,7 +65,7 @@ function renderMarkdown(md: string): string {
     );
 }
 
-export function ProposalResult({ proposal, products, incentives, customerName, onReset }: Props) {
+export function ProposalResult({ proposal, products, incentives, incomeEstimate, customerName, onReset }: Props) {
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -78,6 +85,24 @@ export function ProposalResult({ proposal, products, incentives, customerName, o
           New Proposal
         </button>
       </div>
+
+      {/* Income estimate banner — only shown when LinkedIn was used */}
+      {incomeEstimate && (
+        <div className="bg-white rounded-xl border border-green-100 shadow-sm p-4 flex items-start gap-4">
+          <div className="text-2xl">🔗</div>
+          <div className="flex-1 space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-semibold text-gray-800">LinkedIn Income Estimate</span>
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${CONFIDENCE_COLORS[incomeEstimate.confidence]}`}>
+                {incomeEstimate.confidence} confidence
+              </span>
+              <span className="text-sm font-bold text-green-700">{incomeEstimate.label}</span>
+            </div>
+            <p className="text-xs text-gray-500">{incomeEstimate.reasoning}</p>
+            <p className="text-xs text-gray-400 italic">{incomeEstimate.incomeNotes}</p>
+          </div>
+        </div>
+      )}
 
       {/* Products */}
       <section>

@@ -1,3 +1,8 @@
+import type { LinkedInProfile } from "./tools/linkedin";
+import type { IncomeEstimate } from "./tools/income-estimator";
+
+export type { LinkedInProfile, IncomeEstimate };
+
 export interface CustomerInput {
   name: string;
   address: string;
@@ -13,6 +18,7 @@ export interface CustomerInput {
   roofAge: number;
   hasAttic: boolean;
   state: string;
+  linkedinUrl?: string;
 }
 
 export interface GeoLocation {
@@ -63,6 +69,8 @@ export interface ProposalState {
   incentives: Incentive[];
   products: ProductRecommendation[];
   proposalMarkdown: string;
+  linkedinProfile: LinkedInProfile | null;
+  incomeEstimate: IncomeEstimate | null;
   currentStep: string;
   stepLog: StepLogEntry[];
   error: string | null;
@@ -77,5 +85,11 @@ export interface StepLogEntry {
 
 export type StreamEvent =
   | { type: "step"; step: string; detail: string }
-  | { type: "done"; proposal: string; products: ProductRecommendation[]; incentives: Incentive[] }
+  | {
+      type: "done";
+      proposal: string;
+      products: ProductRecommendation[];
+      incentives: Incentive[];
+      incomeEstimate: IncomeEstimate | null;
+    }
   | { type: "error"; message: string };

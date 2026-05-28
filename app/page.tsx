@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { CustomerInput, StreamEvent, ProductRecommendation, Incentive } from "@/lib/types";
+import type { CustomerInput, StreamEvent, ProductRecommendation, Incentive, IncomeEstimate } from "@/lib/types";
 import { ProposalResult } from "./components/ProposalResult";
 import { PipelineProgress } from "./components/PipelineProgress";
 
@@ -30,6 +30,7 @@ const DEFAULT_FORM: CustomerInput = {
   roofAge: 12,
   hasAttic: true,
   state: "",
+  linkedinUrl: "",
 };
 
 interface StepInfo {
@@ -46,6 +47,7 @@ export default function HomePage() {
     proposal: string;
     products: ProductRecommendation[];
     incentives: Incentive[];
+    incomeEstimate: IncomeEstimate | null;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -116,6 +118,7 @@ export default function HomePage() {
               proposal: event.proposal,
               products: event.products,
               incentives: event.incentives,
+              incomeEstimate: event.incomeEstimate,
             });
           } else if (event.type === "error") {
             setError(event.message);
@@ -132,7 +135,10 @@ export default function HomePage() {
   if (result) {
     return (
       <ProposalResult
-        {...result}
+        proposal={result.proposal}
+        products={result.products}
+        incentives={result.incentives}
+        incomeEstimate={result.incomeEstimate}
         customerName={form.name}
         onReset={() => { setResult(null); setSteps([]); }}
       />
@@ -151,7 +157,7 @@ export default function HomePage() {
         </p>
       </div>
 
-      {running && <PipelineProgress steps={steps} />}
+      {running && <PipelineProgress steps={steps} hasLinkedIn={!!form.linkedinUrl?.trim()} />}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
@@ -182,6 +188,28 @@ export default function HomePage() {
                   onChange={(e) => field("email", e.target.value)}
                   className="input"
                   placeholder="jane@example.com"
+                />
+              </FormField>
+            </div>
+            {/* LinkedIn — optional personalization */}
+            <div className="border border-dashed border-green-200 rounded-lg p-4 bg-green-50 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+                  LinkedIn Personalization
+                </span>
+                <span className="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">Optional</span>
+              </div>
+              <p className="text-xs text-gray-500">
+                Share your public LinkedIn profile URL to let our AI estimate your income range and tailor financing recommendations to your career profile.
+                We only read publicly available data via Apify — never stored.
+              </p>
+              <FormField label="LinkedIn Profile URL">
+                <input
+                  type="url"
+                  value={form.linkedinUrl ?? ""}
+                  onChange={(e) => field("linkedinUrl", e.target.value)}
+                  className="input"
+                  placeholder="https://www.linkedin.com/in/your-username"
                 />
               </FormField>
             </div>
