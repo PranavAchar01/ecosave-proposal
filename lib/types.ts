@@ -14,11 +14,25 @@ export type {
   SocialPersonality,
 };
 
+// What the simplified form sends — just the essentials
+export interface CustomerFormInput {
+  firstName: string;
+  lastName: string;
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  interests: string[]; // ["solar","hvac","insulation","roofing","battery_storage","electrical"]
+  linkedinUrl?: string;
+  instagramHandle?: string;
+}
+
+// Resolved full customer used internally by the pipeline (with defaults filled in)
 export interface CustomerInput {
   name: string;
   address: string;
   zipCode: string;
-  email: string;
+  state: string;
   homeType: "single_family" | "condo" | "townhouse" | "multi_family";
   sqft: number;
   yearBuilt: number;
@@ -26,11 +40,19 @@ export interface CustomerInput {
   monthlyBill: number;
   budget: "under_10k" | "10k_25k" | "25k_50k" | "over_50k";
   goals: string[];
+  interests: string[];
   roofAge: number;
   hasAttic: boolean;
-  state: string;
   linkedinUrl?: string;
   instagramHandle?: string;
+}
+
+// A single LinkedIn profile candidate returned by the search step
+export interface LinkedInCandidate {
+  url: string;
+  name: string;
+  headline: string;
+  snippet: string;
 }
 
 export interface GeoLocation {
