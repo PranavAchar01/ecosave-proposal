@@ -4,28 +4,136 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-white text-gray-900;
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
 @layer components {
   .input {
-    @apply w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent transition-shadow bg-white;
+    @apply w-full border border-gray-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-green-700 focus:border-green-700 transition-colors bg-white text-gray-900 placeholder-gray-400;
+  }
+
+  .btn-primary {
+    @apply bg-gray-900 text-white text-sm font-medium px-5 py-2.5 hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2;
+  }
+
+  .btn-ghost {
+    @apply border border-gray-300 text-gray-600 text-sm font-medium px-5 py-2.5 hover:bg-gray-50 transition-colors focus:outline-none;
+  }
+
+  .section-label {
+    @apply text-xs font-semibold uppercase tracking-widest text-gray-400 block mb-4;
+  }
+
+  .stat-label {
+    @apply text-xs text-gray-400 uppercase tracking-wide;
+  }
+
+  .stat-value {
+    @apply text-sm font-semibold text-gray-900;
   }
 }
 
-/* Proposal markdown rendering — uses standard Tailwind only in @apply */
-.proposal-content h1 { @apply text-2xl font-bold mt-6 mb-3 text-green-800; }
-.proposal-content h2 { @apply text-xl font-semibold mt-5 mb-2 text-green-700; }
-.proposal-content h3 { @apply text-lg font-medium mt-4 mb-2 text-gray-800; }
-.proposal-content p  { @apply mb-3 leading-relaxed; }
-.proposal-content ul { @apply list-disc pl-6 mb-3 space-y-1; }
-.proposal-content ol { @apply list-decimal pl-6 mb-3 space-y-1; }
-.proposal-content strong { @apply font-semibold; }
-.proposal-content em { @apply italic; }
-.proposal-content blockquote { @apply border-l-4 border-green-300 pl-4 italic text-gray-600 my-4; }
+/* ── Proposal document typography ─────────────────────────────────────────── */
+.proposal-content {
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  color: #374151;
+}
 
+.proposal-content h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111827;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.proposal-content h1:first-child {
+  margin-top: 0;
+}
+
+.proposal-content h2 {
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #9ca3af;
+  margin-top: 2.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.proposal-content h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #111827;
+  margin-top: 1.5rem;
+  margin-bottom: 0.375rem;
+}
+
+.proposal-content p {
+  margin-bottom: 1rem;
+}
+
+.proposal-content ul {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 1.25rem;
+}
+
+.proposal-content ul li {
+  padding-left: 1.5rem;
+  position: relative;
+  margin-bottom: 0.375rem;
+  color: #4b5563;
+}
+
+.proposal-content ul li::before {
+  content: "—";
+  position: absolute;
+  left: 0;
+  color: #d1d5db;
+}
+
+.proposal-content ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+  margin-bottom: 1.25rem;
+  color: #4b5563;
+}
+
+.proposal-content ol li {
+  margin-bottom: 0.375rem;
+}
+
+.proposal-content strong {
+  font-weight: 600;
+  color: #111827;
+}
+
+.proposal-content em {
+  font-style: italic;
+}
+
+.proposal-content blockquote {
+  border-left: 2px solid #d1d5db;
+  padding-left: 1rem;
+  color: #6b7280;
+  margin: 1.25rem 0;
+  font-style: italic;
+}
+
+/* ── Print ────────────────────────────────────────────────────────────────── */
 @media print {
-  header, footer, button { display: none !important; }
-  .proposal-content { font-size: 12px; }
+  header, footer, button, nav { display: none !important; }
+  .proposal-content { font-size: 11pt; line-height: 1.6; }
+  .proposal-content h1 { font-size: 16pt; }
+  .proposal-content h2 { font-size: 8pt; }
+  .proposal-content h3 { font-size: 12pt; }
 }

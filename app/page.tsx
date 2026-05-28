@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import {
+  Sun, Battery, Thermometer, Home, HardHat, Zap,
+  Building2, Map, MessageSquare, Camera, CheckCircle2,
+  ChevronRight, ArrowLeft, Link2, Search, Loader2,
+} from "lucide-react";
 import type {
   CustomerFormInput,
   LinkedInCandidate,
@@ -15,42 +20,22 @@ import type {
 import { ProposalResult } from "./components/ProposalResult";
 import { PipelineProgress } from "./components/PipelineProgress";
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+// ─── Config ───────────────────────────────────────────────────────────────────
 
 const PRODUCTS = [
-  { id: "solar", label: "Solar", icon: "☀️" },
-  { id: "battery_storage", label: "Battery Storage", icon: "🔋" },
-  { id: "hvac", label: "HVAC", icon: "❄️" },
-  { id: "insulation", label: "Insulation", icon: "🏠" },
-  { id: "roofing", label: "Roofing", icon: "🏗️" },
-  { id: "electrical", label: "Electrical", icon: "⚡" },
+  { id: "solar",           label: "Solar PPA",        Icon: Sun        },
+  { id: "battery_storage", label: "Battery Storage",  Icon: Battery    },
+  { id: "hvac",            label: "HVAC / Heat Pump", Icon: Thermometer},
+  { id: "insulation",      label: "Insulation",        Icon: Home       },
+  { id: "roofing",         label: "Roofing",           Icon: HardHat    },
+  { id: "electrical",      label: "Electrical",        Icon: Zap        },
 ];
 
 const DATA_SOURCES = [
-  {
-    id: "zillow",
-    icon: "🏠",
-    label: "Zillow Property Intel",
-    desc: "Home value, equity & structural details",
-  },
-  {
-    id: "nrel",
-    icon: "☀️",
-    label: "NREL Solar Data",
-    desc: "Real solar production from gov't satellite data",
-  },
-  {
-    id: "maps",
-    icon: "📍",
-    label: "Google Maps",
-    desc: "Local installer & contractor landscape",
-  },
-  {
-    id: "reddit",
-    icon: "💬",
-    label: "Reddit Community",
-    desc: "Homeowner sentiment & program feedback",
-  },
+  { Icon: Building2,      label: "Zillow",        desc: "Property value, equity, structural details" },
+  { Icon: Sun,            label: "NREL Solar",    desc: "Solar production estimate from satellite data" },
+  { Icon: Map,            label: "Google Maps",   desc: "Local installer & contractor landscape" },
+  { Icon: MessageSquare,  label: "Reddit",        desc: "Homeowner sentiment & program feedback" },
 ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -63,7 +48,7 @@ interface StepInfo {
   done: boolean;
 }
 
-type ProposalResult = {
+type ResultData = {
   proposal: string;
   products: ProductRecommendation[];
   incentives: Incentive[];
@@ -78,82 +63,62 @@ type ProposalResult = {
 export default function HomePage() {
   const [stage, setStage] = useState<Stage>("intake");
 
-  // Step 1 — intake
   const [form, setForm] = useState<Omit<CustomerFormInput, "linkedinUrl" | "instagramHandle">>({
-    firstName: "",
-    lastName: "",
-    address: "",
-    city: "",
-    state: "",
-    zipCode: "",
-    interests: [],
+    firstName: "", lastName: "", address: "", city: "", state: "", zipCode: "", interests: [],
   });
 
-  // Step 2 — confirm
   const [candidates, setCandidates] = useState<LinkedInCandidate[]>([]);
   const [selectedUrl, setSelectedUrl] = useState<string | "none" | null>(null);
+  const [manualUrl, setManualUrl] = useState("");
   const [instagramHandle, setInstagramHandle] = useState("");
 
-  // Step 3 — running / done
   const [steps, setSteps] = useState<StepInfo[]>([]);
-  const [result, setResult] = useState<ProposalResult | null>(null);
+  const [result, setResult] = useState<ResultData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // ── Helpers ──
   function toggleInterest(id: string) {
     setForm((f) => ({
       ...f,
-      interests: f.interests.includes(id)
-        ? f.interests.filter((i) => i !== id)
-        : [...f.interests, id],
+      interests: f.interests.includes(id) ? f.interests.filter((i) => i !== id) : [...f.interests, id],
     }));
   }
 
-  // ── Step 1: search LinkedIn ──
+  // ── Step 1 → Search LinkedIn ───────────────────────────────────────────────
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.firstName || !form.lastName || !form.address || !form.zipCode || !form.state) {
-      alert("Please fill in all required fields.");
-      return;
-    }
     if (form.interests.length === 0) {
-      alert("Please select at least one product interest.");
+      alert("Select at least one product interest.");
       return;
     }
-
     setStage("searching");
     setCandidates([]);
     setSelectedUrl(null);
+    setManualUrl("");
 
     try {
       const res = await fetch("/api/search-linkedin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: form.firstName,
-          lastName: form.lastName,
-          city: form.city,
-          state: form.state,
-        }),
+        body: JSON.stringify({ firstName: form.firstName, lastName: form.lastName, city: form.city, state: form.state }),
       });
       const data = await res.json();
       setCandidates(data.candidates ?? []);
     } catch {
-      // proceed with no candidates
+      // proceed with no results
     }
-
     setStage("confirm");
   }
 
-  // ── Step 2: generate proposal ──
+  // ── Step 2 → Generate proposal ────────────────────────────────────────────
   async function handleGenerate() {
+    const linkedinUrl = selectedUrl === "none" ? undefined : selectedUrl ?? (manualUrl.trim() || undefined);
     setStage("running");
     setSteps([]);
     setError(null);
 
     const payload: CustomerFormInput = {
       ...form,
-      linkedinUrl: selectedUrl && selectedUrl !== "none" ? selectedUrl : undefined,
+      linkedinUrl,
       instagramHandle: instagramHandle.replace(/^@/, "") || undefined,
     };
 
@@ -180,13 +145,8 @@ export default function HomePage() {
           if (!line.startsWith("data: ")) continue;
           const raw = line.slice(6).trim();
           if (!raw) continue;
-
           let event: StreamEvent;
-          try {
-            event = JSON.parse(raw);
-          } catch {
-            continue;
-          }
+          try { event = JSON.parse(raw); } catch { continue; }
 
           if (event.type === "step") {
             setSteps((prev) => [
@@ -196,18 +156,14 @@ export default function HomePage() {
           } else if (event.type === "done") {
             setSteps((prev) => prev.map((s) => ({ ...s, done: true })));
             setResult({
-              proposal: event.proposal,
-              products: event.products,
-              incentives: event.incentives,
-              incomeEstimate: event.incomeEstimate,
-              propertyIntel: event.propertyIntel,
-              localMarket: event.localMarket,
+              proposal: event.proposal, products: event.products,
+              incentives: event.incentives, incomeEstimate: event.incomeEstimate,
+              propertyIntel: event.propertyIntel, localMarket: event.localMarket,
               communitySignals: event.communitySignals,
             });
             setStage("done");
           } else if (event.type === "error") {
             setError(event.message);
-            setStage("running"); // stay on running view to show error
           }
         }
       }
@@ -216,42 +172,33 @@ export default function HomePage() {
     }
   }
 
-  // ─── Render: done ────────────────────────────────────────────────────────────
+  // ─── Done ─────────────────────────────────────────────────────────────────
   if (stage === "done" && result) {
     return (
       <ProposalResult
-        proposal={result.proposal}
-        products={result.products}
-        incentives={result.incentives}
-        incomeEstimate={result.incomeEstimate}
-        propertyIntel={result.propertyIntel}
-        localMarket={result.localMarket}
-        communitySignals={result.communitySignals}
+        {...result}
         customerName={`${form.firstName} ${form.lastName}`}
-        onReset={() => {
-          setResult(null);
-          setSteps([]);
-          setStage("intake");
-        }}
+        onReset={() => { setResult(null); setSteps([]); setStage("intake"); }}
       />
     );
   }
 
-  // ─── Render: running ─────────────────────────────────────────────────────────
+  // ─── Running ──────────────────────────────────────────────────────────────
   if (stage === "running") {
     return (
       <div className="space-y-6">
-        <div className="text-center space-y-1">
-          <h1 className="text-2xl font-bold text-ecosave-800">
-            Building Your Proposal
+        <div>
+          <p className="section-label">Generating proposal</p>
+          <h1 className="text-xl font-bold tracking-tight text-gray-900">
+            {form.firstName} {form.lastName}
           </h1>
-          <p className="text-sm text-gray-500">
-            Our AI pipeline is researching {form.firstName}&apos;s property, market, and incentives…
+          <p className="text-sm text-gray-400 mt-1">
+            {form.address}, {form.city}, {form.state} {form.zipCode}
           </p>
         </div>
         <PipelineProgress steps={steps} />
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+          <div className="border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
             {error}
           </div>
         )}
@@ -259,47 +206,52 @@ export default function HomePage() {
     );
   }
 
-  // ─── Render: confirm ─────────────────────────────────────────────────────────
+  // ─── Confirm ──────────────────────────────────────────────────────────────
   if (stage === "confirm") {
+    const effectiveUrl = selectedUrl === "none" ? undefined : selectedUrl ?? (manualUrl.trim() || undefined);
+    const canGenerate = selectedUrl === "none" || !!effectiveUrl;
+
     return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-1">
-          <h1 className="text-2xl font-bold text-ecosave-800">
-            Confirm Profile &amp; Data Sources
-          </h1>
-          <p className="text-sm text-gray-500">
-            Select {form.firstName}&apos;s LinkedIn profile, then review what our pipeline will pull.
-          </p>
+      <div className="space-y-8">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+          <button onClick={() => setStage("intake")} className="hover:text-gray-700 transition-colors flex items-center gap-1">
+            <ArrowLeft size={12} strokeWidth={2} /> Back
+          </button>
+          <ChevronRight size={12} strokeWidth={1.5} />
+          <span className="text-gray-600 font-medium">{form.firstName} {form.lastName} · {form.city}, {form.state}</span>
+        </div>
+
+        <div>
+          <p className="section-label">Step 2 of 2</p>
+          <h1 className="text-xl font-bold tracking-tight text-gray-900">Confirm Profile &amp; Sources</h1>
+          <p className="text-sm text-gray-400 mt-1">Select the correct LinkedIn profile, then generate.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* LinkedIn picker */}
-          <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">
+          <div className="border border-gray-200">
+            <div className="border-b border-gray-100 px-5 py-4 flex items-center gap-2">
+              <Link2 size={14} className="text-gray-400" strokeWidth={1.75} />
+              <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
                 LinkedIn Profile
-              </h2>
-              <span className="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-medium">
-                Income &amp; career data
               </span>
+              <span className="ml-auto text-xs text-gray-400">Income &amp; career signals</span>
             </div>
 
-            {candidates.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-gray-200 p-5 text-center text-sm text-gray-400 space-y-2">
-                <div className="text-2xl">🔍</div>
-                <p>No LinkedIn profiles found automatically.</p>
-                <p className="text-xs">Paste a URL below to add one manually.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {candidates.map((c) => (
+            <div className="divide-y divide-gray-100">
+              {candidates.length === 0 ? (
+                <div className="px-5 py-8 text-center space-y-2">
+                  <Search size={20} className="text-gray-300 mx-auto" strokeWidth={1.5} />
+                  <p className="text-sm text-gray-400">No profiles found automatically.</p>
+                  <p className="text-xs text-gray-300">Paste a URL below or skip.</p>
+                </div>
+              ) : (
+                candidates.map((c) => (
                   <label
                     key={c.url}
-                    className={`flex items-start gap-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${
-                      selectedUrl === c.url
-                        ? "border-ecosave-500 bg-ecosave-50"
-                        : "border-gray-200 hover:border-ecosave-300"
+                    className={`flex items-start gap-3 px-5 py-4 cursor-pointer transition-colors ${
+                      selectedUrl === c.url ? "bg-gray-50" : "hover:bg-gray-50"
                     }`}
                   >
                     <input
@@ -308,91 +260,81 @@ export default function HomePage() {
                       value={c.url}
                       checked={selectedUrl === c.url}
                       onChange={() => setSelectedUrl(c.url)}
-                      className="mt-1 accent-green-600"
+                      className="mt-0.5 accent-green-700"
                     />
-                    <div className="min-w-0">
-                      <p className="font-medium text-gray-800 text-sm">{c.name}</p>
-                      {c.headline && (
-                        <p className="text-xs text-gray-500 truncate">{c.headline}</p>
-                      )}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-900">{c.name || "LinkedIn Profile"}</p>
+                      {c.headline && <p className="text-xs text-gray-500 mt-0.5 truncate">{c.headline}</p>}
                       <p className="text-xs text-blue-500 truncate mt-0.5">{c.url}</p>
                     </div>
+                    {selectedUrl === c.url && (
+                      <CheckCircle2 size={15} className="text-green-600 shrink-0 mt-0.5" strokeWidth={1.75} />
+                    )}
                   </label>
-                ))}
+                ))
+              )}
+
+              {/* Manual URL */}
+              <div className="px-5 py-4 space-y-2">
+                <p className="text-xs text-gray-400 font-medium">Paste URL manually</p>
+                <input
+                  type="url"
+                  value={manualUrl}
+                  onChange={(e) => {
+                    setManualUrl(e.target.value);
+                    if (e.target.value) setSelectedUrl(null);
+                  }}
+                  placeholder="https://www.linkedin.com/in/username"
+                  className="input"
+                />
               </div>
-            )}
 
-            {/* Manual URL input */}
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-500">
-                Or paste LinkedIn URL directly
+              {/* Skip */}
+              <label className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-gray-50 transition-colors">
+                <input
+                  type="radio"
+                  name="linkedin"
+                  value="none"
+                  checked={selectedUrl === "none"}
+                  onChange={() => { setSelectedUrl("none"); setManualUrl(""); }}
+                  className="accent-gray-400"
+                />
+                <span className="text-sm text-gray-500">Skip LinkedIn — generate without income data</span>
               </label>
-              <input
-                type="url"
-                value={selectedUrl && selectedUrl !== "none" && !candidates.find((c) => c.url === selectedUrl) ? selectedUrl : ""}
-                onChange={(e) => setSelectedUrl(e.target.value || null)}
-                placeholder="https://www.linkedin.com/in/username"
-                className="input text-sm"
-              />
+            </div>
+          </div>
+
+          {/* Data sources */}
+          <div className="border border-gray-200">
+            <div className="border-b border-gray-100 px-5 py-4 flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">Data Sources</span>
+              <div className="ml-auto flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 bg-green-500 inline-block"></span>
+                <span className="text-xs text-gray-400">All ready</span>
+              </div>
             </div>
 
-            <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer">
-              <input
-                type="radio"
-                name="linkedin"
-                value="none"
-                checked={selectedUrl === "none"}
-                onChange={() => setSelectedUrl("none")}
-                className="accent-gray-400"
-              />
-              Skip LinkedIn — generate without income data
-            </label>
-          </section>
-
-          {/* Data sources panel */}
-          <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">
-                Data Sources
-              </h2>
-              <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
-                <span className="w-2 h-2 rounded-full bg-green-500 inline-block"></span>
-                All Connected
-              </span>
-            </div>
-
-            <div className="space-y-3">
-              {DATA_SOURCES.map((src) => (
-                <div
-                  key={src.id}
-                  className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
-                >
-                  <span className="text-xl">{src.icon}</span>
+            <div className="divide-y divide-gray-100">
+              {DATA_SOURCES.map(({ Icon, label, desc }) => (
+                <div key={label} className="flex items-center gap-4 px-5 py-4">
+                  <Icon size={15} className="text-gray-400 shrink-0" strokeWidth={1.75} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-700">{src.label}</p>
-                    <p className="text-xs text-gray-400">{src.desc}</p>
+                    <p className="text-sm font-medium text-gray-700">{label}</p>
+                    <p className="text-xs text-gray-400">{desc}</p>
                   </div>
-                  <span className="shrink-0 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
-                    Ready
-                  </span>
+                  <span className="text-xs font-medium text-green-700 shrink-0">Ready</span>
                 </div>
               ))}
 
-              {/* Instagram — optional, with input */}
-              <div className="p-3 bg-gray-50 rounded-lg space-y-2">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">📸</span>
+              {/* Instagram — optional */}
+              <div className="px-5 py-4 space-y-2">
+                <div className="flex items-center gap-4">
+                  <Camera size={15} className="text-gray-400 shrink-0" strokeWidth={1.75} />
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-700">Instagram</p>
-                    <p className="text-xs text-gray-400">Social tone & lifestyle signals</p>
+                    <p className="text-xs text-gray-400">Social tone &amp; lifestyle signals</p>
                   </div>
-                  <span
-                    className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${
-                      instagramHandle
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-200 text-gray-500"
-                    }`}
-                  >
+                  <span className={`text-xs font-medium shrink-0 ${instagramHandle ? "text-green-700" : "text-gray-300"}`}>
                     {instagramHandle ? "Ready" : "Optional"}
                   </span>
                 </div>
@@ -401,202 +343,161 @@ export default function HomePage() {
                   value={instagramHandle}
                   onChange={(e) => setInstagramHandle(e.target.value)}
                   placeholder="@handle (optional)"
-                  className="input text-sm"
+                  className="input ml-7"
                 />
               </div>
             </div>
 
-            {/* Selected interests recap */}
-            <div className="pt-2 border-t border-gray-100">
-              <p className="text-xs text-gray-500 mb-2">Products requested</p>
+            {/* Selected interests */}
+            <div className="border-t border-gray-100 px-5 py-4">
+              <p className="text-xs text-gray-400 mb-2.5 font-medium">Products requested</p>
               <div className="flex flex-wrap gap-1.5">
-                {PRODUCTS.filter((p) => form.interests.includes(p.id)).map((p) => (
-                  <span
-                    key={p.id}
-                    className="text-xs bg-ecosave-50 text-ecosave-700 border border-ecosave-200 px-2 py-0.5 rounded-full"
-                  >
-                    {p.icon} {p.label}
+                {PRODUCTS.filter((p) => form.interests.includes(p.id)).map(({ id, label, Icon }) => (
+                  <span key={id} className="inline-flex items-center gap-1 text-xs border border-gray-200 px-2 py-1 text-gray-600">
+                    <Icon size={11} strokeWidth={1.75} />
+                    {label}
                   </span>
                 ))}
               </div>
             </div>
-          </section>
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={() => setStage("intake")}
-            className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-600 text-sm font-medium hover:bg-gray-50 transition-colors"
-          >
-            ← Back
+        {/* CTA */}
+        <div className="flex items-center gap-3">
+          <button onClick={() => setStage("intake")} className="btn-ghost flex items-center gap-1.5">
+            <ArrowLeft size={14} strokeWidth={1.75} /> Back
           </button>
           <button
-            type="button"
             onClick={handleGenerate}
-            disabled={selectedUrl === null}
-            className="flex-1 bg-ecosave-600 hover:bg-ecosave-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2.5 px-6 rounded-xl transition-colors shadow-sm text-sm"
+            disabled={!canGenerate}
+            className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            Generate My Proposal →
+            Generate Proposal
+            <ChevronRight size={14} strokeWidth={2} />
           </button>
         </div>
 
-        {selectedUrl === null && (
-          <p className="text-center text-xs text-gray-400">
-            Select a LinkedIn profile above — or choose &quot;Skip LinkedIn&quot; to continue.
+        {!canGenerate && (
+          <p className="text-xs text-gray-400 text-center">
+            Select a LinkedIn profile or choose &quot;Skip LinkedIn&quot; to continue.
           </p>
         )}
       </div>
     );
   }
 
-  // ─── Render: searching ───────────────────────────────────────────────────────
+  // ─── Searching ────────────────────────────────────────────────────────────
   if (stage === "searching") {
     return (
-      <div className="flex flex-col items-center justify-center py-24 space-y-4">
-        <div className="w-12 h-12 border-4 border-ecosave-200 border-t-ecosave-600 rounded-full animate-spin" />
-        <p className="text-gray-600 font-medium">Searching LinkedIn for {form.firstName} {form.lastName}…</p>
-        <p className="text-xs text-gray-400">This takes a few seconds</p>
+      <div className="flex flex-col items-center justify-center py-32 space-y-4">
+        <Loader2 size={24} className="text-gray-400 animate-spin" strokeWidth={1.5} />
+        <div className="text-center">
+          <p className="text-sm font-medium text-gray-700">Searching for {form.firstName} {form.lastName}</p>
+          <p className="text-xs text-gray-400 mt-1">Looking up LinkedIn profile matches…</p>
+        </div>
       </div>
     );
   }
 
-  // ─── Render: intake (step 1) ─────────────────────────────────────────────────
+  // ─── Intake (step 1) ──────────────────────────────────────────────────────
   return (
-    <div className="space-y-8">
-      {/* Hero */}
-      <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-ecosave-800">
-          Get Your Free Energy Proposal
-        </h1>
-        <p className="text-gray-500 max-w-lg mx-auto text-sm">
-          Enter the customer&apos;s basic info. Our AI pipeline finds their profile, researches
-          their property, and writes a hyper-personalized proposal in under 60 seconds.
+    <div className="space-y-0">
+      <div className="pb-8">
+        <p className="section-label">Step 1 of 2</p>
+        <h1 className="text-2xl font-bold tracking-tight text-gray-900">New Energy Proposal</h1>
+        <p className="text-sm text-gray-400 mt-1 max-w-md">
+          Enter the customer&apos;s name, address, and product interests. We&apos;ll find their profile and build the proposal automatically.
         </p>
       </div>
 
-      <form onSubmit={handleSearch} className="space-y-6">
-        {/* Name */}
-        <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
-          <h2 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">
-            Customer
-          </h2>
+      <form onSubmit={handleSearch} className="space-y-0 divide-y divide-gray-200">
+        {/* Customer name */}
+        <div className="py-7">
+          <p className="section-label">Customer</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField label="First Name" required>
-              <input
-                type="text"
-                required
-                value={form.firstName}
+              <input type="text" required value={form.firstName}
                 onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
-                className="input"
-                placeholder="Jane"
-              />
+                className="input" placeholder="Jane" />
             </FormField>
             <FormField label="Last Name" required>
-              <input
-                type="text"
-                required
-                value={form.lastName}
+              <input type="text" required value={form.lastName}
                 onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
-                className="input"
-                placeholder="Smith"
-              />
+                className="input" placeholder="Smith" />
             </FormField>
           </div>
-        </section>
+        </div>
 
         {/* Address */}
-        <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-4">
-          <h2 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">
-            Property Address
-          </h2>
-          <FormField label="Street Address" required>
-            <input
-              type="text"
-              required
-              value={form.address}
-              onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
-              className="input"
-              placeholder="123 Maple Street"
-            />
-          </FormField>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-            <FormField label="City" required>
-              <input
-                type="text"
-                required
-                value={form.city}
-                onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-                className="input"
-                placeholder="Boston"
-              />
+        <div className="py-7">
+          <p className="section-label">Property Address</p>
+          <div className="space-y-4">
+            <FormField label="Street Address" required>
+              <input type="text" required value={form.address}
+                onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+                className="input" placeholder="123 Maple Street" />
             </FormField>
-            <FormField label="State" required>
-              <input
-                type="text"
-                required
-                maxLength={2}
-                value={form.state}
-                onChange={(e) => setForm((f) => ({ ...f, state: e.target.value.toUpperCase() }))}
-                className="input"
-                placeholder="MA"
-              />
-            </FormField>
-            <FormField label="ZIP Code" required>
-              <input
-                type="text"
-                required
-                pattern="\d{5}"
-                value={form.zipCode}
-                onChange={(e) => setForm((f) => ({ ...f, zipCode: e.target.value }))}
-                className="input"
-                placeholder="02134"
-              />
-            </FormField>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="col-span-1">
+                <FormField label="City" required>
+                  <input type="text" required value={form.city}
+                    onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+                    className="input" placeholder="Boston" />
+                </FormField>
+              </div>
+              <FormField label="State" required>
+                <input type="text" required maxLength={2} value={form.state}
+                  onChange={(e) => setForm((f) => ({ ...f, state: e.target.value.toUpperCase() }))}
+                  className="input" placeholder="MA" />
+              </FormField>
+              <FormField label="ZIP" required>
+                <input type="text" required pattern="\d{5}" value={form.zipCode}
+                  onChange={(e) => setForm((f) => ({ ...f, zipCode: e.target.value }))}
+                  className="input" placeholder="02134" />
+              </FormField>
+            </div>
           </div>
-        </section>
+        </div>
 
         {/* Product interests */}
-        <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-gray-700 text-sm uppercase tracking-wide">
-              What Are They Interested In?
-            </h2>
+        <div className="py-7">
+          <div className="flex items-baseline justify-between mb-4">
+            <p className="section-label mb-0">Product Interests</p>
             <span className="text-xs text-gray-400">Select all that apply</span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {PRODUCTS.map((p) => {
-              const active = form.interests.includes(p.id);
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {PRODUCTS.map(({ id, label, Icon }) => {
+              const active = form.interests.includes(id);
               return (
                 <button
-                  key={p.id}
+                  key={id}
                   type="button"
-                  onClick={() => toggleInterest(p.id)}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-lg border-2 text-sm font-medium transition-colors ${
+                  onClick={() => toggleInterest(id)}
+                  className={`flex items-center gap-2.5 px-4 py-3 border text-sm font-medium transition-colors text-left ${
                     active
-                      ? "border-ecosave-600 bg-ecosave-50 text-ecosave-800"
-                      : "border-gray-200 text-gray-600 hover:border-ecosave-300"
+                      ? "border-gray-900 bg-gray-900 text-white"
+                      : "border-gray-200 text-gray-600 hover:border-gray-400"
                   }`}
                 >
-                  <span className="text-lg">{p.icon}</span>
-                  {p.label}
+                  <Icon size={14} strokeWidth={active ? 2 : 1.75} className={active ? "text-white" : "text-gray-400"} />
+                  {label}
                 </button>
               );
             })}
           </div>
-        </section>
+        </div>
 
-        <button
-          type="submit"
-          className="w-full bg-ecosave-600 hover:bg-ecosave-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors shadow-sm text-base"
-        >
-          Search &amp; Find Profile →
-        </button>
-
-        <p className="text-center text-xs text-gray-400">
-          We&apos;ll search for the most likely LinkedIn match — you pick the right one before generating.
-        </p>
+        {/* Submit */}
+        <div className="pt-7">
+          <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2 py-3">
+            <Search size={14} strokeWidth={2} />
+            Search &amp; Find Profile
+          </button>
+          <p className="text-xs text-gray-400 text-center mt-3">
+            We&apos;ll surface the most likely LinkedIn match — you confirm before generating.
+          </p>
+        </div>
       </form>
     </div>
   );
@@ -604,17 +505,13 @@ export default function HomePage() {
 
 // ─── FormField helper ─────────────────────────────────────────────────────────
 function FormField({
-  label,
-  required,
-  children,
+  label, required, children,
 }: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
+  label: string; required?: boolean; children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1">
-      <label className="text-sm font-medium text-gray-600">
+    <div className="space-y-1.5">
+      <label className="text-xs font-medium text-gray-500">
         {label}
         {required && <span className="text-red-400 ml-0.5">*</span>}
       </label>
