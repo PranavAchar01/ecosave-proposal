@@ -12,8 +12,6 @@ export interface IncomeEstimate {
   incomeNotes: string;
 }
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
 export async function estimateIncome(
   profile: LinkedInProfile,
   homeLocation: string
@@ -66,7 +64,7 @@ Rules:
 - suggestedBudget: under_10k if income<60k, 10k_25k if 60-120k, 25k_50k if 120-200k, over_50k if 200k+
 - This is a rough range for proposal personalization only — never claim it is precise`;
 
-  const msg = await anthropic.messages.create({
+  const msg = await new Anthropic().messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 512,
     messages: [{ role: "user", content: prompt }],

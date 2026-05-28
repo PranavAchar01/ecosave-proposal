@@ -16,7 +16,9 @@ import { fetchLocalMarketIntel } from "../tools/local-market";
 import { fetchCommunitySignals } from "../tools/community-signals";
 import { fetchSocialPersonality } from "../tools/social-profile";
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+function getClient() {
+  return new Anthropic();
+}
 
 function log(state: ProposalState, step: string, detail: string): StepLogEntry {
   const entry: StepLogEntry = { step, status: "done", detail, timestamp: Date.now() };
@@ -26,7 +28,7 @@ function log(state: ProposalState, step: string, detail: string): StepLogEntry {
 }
 
 async function askClaude(system: string, user: string, maxTokens = 2048): Promise<string> {
-  const msg = await anthropic.messages.create({
+  const msg = await getClient().messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: maxTokens,
     system,
