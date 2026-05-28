@@ -1,6 +1,6 @@
 "use client";
 
-import type { ProductRecommendation, Incentive, IncomeEstimate } from "@/lib/types";
+import type { ProductRecommendation, Incentive, IncomeEstimate, PropertyIntelligence, LocalMarketIntel, CommunitySignals } from "@/lib/types";
 
 const CATEGORY_LABELS: Record<string, string> = {
   solar_ppa: "Solar PPA",
@@ -43,6 +43,9 @@ interface Props {
   products: ProductRecommendation[];
   incentives: Incentive[];
   incomeEstimate: IncomeEstimate | null;
+  propertyIntel: PropertyIntelligence | null;
+  localMarket: LocalMarketIntel | null;
+  communitySignals: CommunitySignals | null;
   customerName: string;
   onReset: () => void;
 }
@@ -65,7 +68,7 @@ function renderMarkdown(md: string): string {
     );
 }
 
-export function ProposalResult({ proposal, products, incentives, incomeEstimate, customerName, onReset }: Props) {
+export function ProposalResult({ proposal, products, incentives, incomeEstimate, propertyIntel, localMarket, communitySignals, customerName, onReset }: Props) {
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -101,6 +104,90 @@ export function ProposalResult({ proposal, products, incentives, incomeEstimate,
             <p className="text-xs text-gray-500">{incomeEstimate.reasoning}</p>
             <p className="text-xs text-gray-400 italic">{incomeEstimate.incomeNotes}</p>
           </div>
+        </div>
+      )}
+
+      {/* Intelligence summary grid */}
+      {(propertyIntel?.property || localMarket || communitySignals) && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+          {/* Zillow card */}
+          {propertyIntel?.property && (
+            <div className="bg-white rounded-xl border border-blue-100 shadow-sm p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">🏠</span>
+                <span className="text-sm font-semibold text-gray-700">Property Intel</span>
+                <span className="ml-auto text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">Zillow</span>
+              </div>
+              {propertyIntel.property.zestimate && (
+                <div>
+                  <div className="text-xs text-gray-500">Zestimate</div>
+                  <div className="font-bold text-blue-700">${Math.round(propertyIntel.property.zestimate / 1000)}k</div>
+                </div>
+              )}
+              {propertyIntel.estimatedEquity && (
+                <div>
+                  <div className="text-xs text-gray-500">Est. Equity</div>
+                  <div className="font-semibold text-gray-800">${Math.round(propertyIntel.estimatedEquity / 1000)}k</div>
+                </div>
+              )}
+              <div className="text-xs text-gray-500">
+                Financing capacity: <span className="font-medium text-gray-700">{propertyIntel.financingCapacity}</span>
+              </div>
+              {propertyIntel.notes.slice(0, 2).map((n, i) => (
+                <div key={i} className="text-xs text-gray-500">{n}</div>
+              ))}
+            </div>
+          )}
+
+          {/* Local market card */}
+          {localMarket && (
+            <div className="bg-white rounded-xl border border-yellow-100 shadow-sm p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">📍</span>
+                <span className="text-sm font-semibold text-gray-700">Local Market</span>
+                <span className="ml-auto text-xs bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-full">Google Maps</span>
+              </div>
+              <div className="text-xs text-gray-500">
+                {localMarket.solarInstallers.length} solar installers · {localMarket.hvacContractors.length} HVAC contractors nearby
+              </div>
+              <div className="text-xs">
+                Competitiveness: <span className={`font-semibold ${localMarket.marketCompetitiveness === "high" ? "text-green-600" : localMarket.marketCompetitiveness === "medium" ? "text-yellow-600" : "text-gray-600"}`}>{localMarket.marketCompetitiveness}</span>
+              </div>
+              {localMarket.solarInstallers.slice(0, 2).map((c, i) => (
+                <div key={i} className="text-xs text-gray-600">
+                  {c.name} — {c.rating}★ ({c.reviewCount} reviews)
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Community signals card */}
+          {communitySignals && (
+            <div className="bg-white rounded-xl border border-orange-100 shadow-sm p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">💬</span>
+                <span className="text-sm font-semibold text-gray-700">Community</span>
+                <span className="ml-auto text-xs bg-orange-50 text-orange-700 px-2 py-0.5 rounded-full">Reddit</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                  communitySignals.dominantSentiment === "positive" ? "bg-green-100 text-green-700" :
+                  communitySignals.dominantSentiment === "negative" ? "bg-red-100 text-red-700" :
+                  "bg-gray-100 text-gray-600"
+                }`}>{communitySignals.dominantSentiment}</span>
+                <span className="text-xs text-gray-500">{communitySignals.posts.length} posts analyzed</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {communitySignals.keyThemes.map((t, i) => (
+                  <span key={i} className="text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">{t}</span>
+                ))}
+              </div>
+              {communitySignals.massSaveContext && (
+                <div className="text-xs text-gray-500 italic">{communitySignals.massSaveContext}</div>
+              )}
+            </div>
+          )}
         </div>
       )}
 

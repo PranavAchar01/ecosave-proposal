@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { CustomerInput, StreamEvent, ProductRecommendation, Incentive, IncomeEstimate } from "@/lib/types";
+import type { CustomerInput, StreamEvent, ProductRecommendation, Incentive, IncomeEstimate, PropertyIntelligence, LocalMarketIntel, CommunitySignals } from "@/lib/types";
 import { ProposalResult } from "./components/ProposalResult";
 import { PipelineProgress } from "./components/PipelineProgress";
 
@@ -31,6 +31,7 @@ const DEFAULT_FORM: CustomerInput = {
   hasAttic: true,
   state: "",
   linkedinUrl: "",
+  instagramHandle: "",
 };
 
 interface StepInfo {
@@ -48,6 +49,9 @@ export default function HomePage() {
     products: ProductRecommendation[];
     incentives: Incentive[];
     incomeEstimate: IncomeEstimate | null;
+    propertyIntel: PropertyIntelligence | null;
+    localMarket: LocalMarketIntel | null;
+    communitySignals: CommunitySignals | null;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -119,6 +123,9 @@ export default function HomePage() {
               products: event.products,
               incentives: event.incentives,
               incomeEstimate: event.incomeEstimate,
+              propertyIntel: event.propertyIntel,
+              localMarket: event.localMarket,
+              communitySignals: event.communitySignals,
             });
           } else if (event.type === "error") {
             setError(event.message);
@@ -139,6 +146,9 @@ export default function HomePage() {
         products={result.products}
         incentives={result.incentives}
         incomeEstimate={result.incomeEstimate}
+        propertyIntel={result.propertyIntel}
+        localMarket={result.localMarket}
+        communitySignals={result.communitySignals}
         customerName={form.name}
         onReset={() => { setResult(null); setSteps([]); }}
       />
@@ -157,7 +167,7 @@ export default function HomePage() {
         </p>
       </div>
 
-      {running && <PipelineProgress steps={steps} hasLinkedIn={!!form.linkedinUrl?.trim()} />}
+      {running && <PipelineProgress steps={steps} />}
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
@@ -203,15 +213,26 @@ export default function HomePage() {
                 Share your public LinkedIn profile URL to let our AI estimate your income range and tailor financing recommendations to your career profile.
                 We only read publicly available data via Apify — never stored.
               </p>
-              <FormField label="LinkedIn Profile URL">
-                <input
-                  type="url"
-                  value={form.linkedinUrl ?? ""}
-                  onChange={(e) => field("linkedinUrl", e.target.value)}
-                  className="input"
-                  placeholder="https://www.linkedin.com/in/your-username"
-                />
-              </FormField>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <FormField label="LinkedIn Profile URL">
+                  <input
+                    type="url"
+                    value={form.linkedinUrl ?? ""}
+                    onChange={(e) => field("linkedinUrl", e.target.value)}
+                    className="input"
+                    placeholder="https://www.linkedin.com/in/your-username"
+                  />
+                </FormField>
+                <FormField label="Instagram Handle">
+                  <input
+                    type="text"
+                    value={form.instagramHandle ?? ""}
+                    onChange={(e) => field("instagramHandle", e.target.value)}
+                    className="input"
+                    placeholder="@yourhandle"
+                  />
+                </FormField>
+              </div>
             </div>
           </section>
 

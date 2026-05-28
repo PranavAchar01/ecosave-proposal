@@ -1,7 +1,18 @@
 import type { LinkedInProfile } from "./tools/linkedin";
 import type { IncomeEstimate } from "./tools/income-estimator";
+import type { PropertyIntelligence } from "./tools/zillow";
+import type { LocalMarketIntel } from "./tools/local-market";
+import type { CommunitySignals } from "./tools/community-signals";
+import type { SocialPersonality } from "./tools/social-profile";
 
-export type { LinkedInProfile, IncomeEstimate };
+export type {
+  LinkedInProfile,
+  IncomeEstimate,
+  PropertyIntelligence,
+  LocalMarketIntel,
+  CommunitySignals,
+  SocialPersonality,
+};
 
 export interface CustomerInput {
   name: string;
@@ -19,6 +30,7 @@ export interface CustomerInput {
   hasAttic: boolean;
   state: string;
   linkedinUrl?: string;
+  instagramHandle?: string;
 }
 
 export interface GeoLocation {
@@ -71,6 +83,10 @@ export interface ProposalState {
   proposalMarkdown: string;
   linkedinProfile: LinkedInProfile | null;
   incomeEstimate: IncomeEstimate | null;
+  propertyIntel: PropertyIntelligence | null;
+  localMarket: LocalMarketIntel | null;
+  communitySignals: CommunitySignals | null;
+  socialPersonality: SocialPersonality | null;
   currentStep: string;
   stepLog: StepLogEntry[];
   error: string | null;
@@ -91,5 +107,8 @@ export type StreamEvent =
       products: ProductRecommendation[];
       incentives: Incentive[];
       incomeEstimate: IncomeEstimate | null;
+      propertyIntel: PropertyIntelligence | null;
+      localMarket: LocalMarketIntel | null;
+      communitySignals: CommunitySignals | null;
     }
   | { type: "error"; message: string };

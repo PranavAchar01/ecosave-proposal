@@ -7,23 +7,20 @@ interface StepInfo {
 }
 
 const STEP_ICONS: Record<string, string> = {
-  "Reading LinkedIn profile": "🔗",
-  "LinkedIn skipped": "⏭",
   "Locating your property": "📍",
-  "Fetching solar potential": "☀️",
-  "Researching incentives": "💰",
-  "Matching products": "🔧",
-  "Writing your proposal": "📄",
+  "Gathering property & market intelligence": "🔍",
+  "Researching incentive programs": "💰",
+  "Matching products to your profile": "🔧",
+  "Writing your hyper-personalized proposal": "📄",
 };
 
-export function PipelineProgress({ steps, hasLinkedIn }: { steps: StepInfo[]; hasLinkedIn?: boolean }) {
+export function PipelineProgress({ steps }: { steps: StepInfo[] }) {
   const ALL_STEPS = [
-    ...(hasLinkedIn ? ["Reading LinkedIn profile"] : []),
     "Locating your property",
-    "Fetching solar potential",
-    "Researching incentives",
-    "Matching products",
-    "Writing your proposal",
+    "Gathering property & market intelligence",
+    "Researching incentive programs",
+    "Matching products to your profile",
+    "Writing your hyper-personalized proposal",
   ];
 
   return (
