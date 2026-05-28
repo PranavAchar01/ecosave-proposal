@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900;
+  }
+}
+
+@layer components {
+  .input {
+    @apply w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-transparent transition-shadow bg-white;
+  }
+}
+
+/* Proposal markdown rendering — uses standard Tailwind only in @apply */
+.proposal-content h1 { @apply text-2xl font-bold mt-6 mb-3 text-green-800; }
+.proposal-content h2 { @apply text-xl font-semibold mt-5 mb-2 text-green-700; }
+.proposal-content h3 { @apply text-lg font-medium mt-4 mb-2 text-gray-800; }
+.proposal-content p  { @apply mb-3 leading-relaxed; }
+.proposal-content ul { @apply list-disc pl-6 mb-3 space-y-1; }
+.proposal-content ol { @apply list-decimal pl-6 mb-3 space-y-1; }
+.proposal-content strong { @apply font-semibold; }
+.proposal-content em { @apply italic; }
+.proposal-content blockquote { @apply border-l-4 border-green-300 pl-4 italic text-gray-600 my-4; }
+
+@media print {
+  header, footer, button { display: none !important; }
+  .proposal-content { font-size: 12px; }
+}
